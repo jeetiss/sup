@@ -1,84 +1,158 @@
 const { Server } = require('ws')
+const { ReplaySubject } = require('rxjs/Rx')
 const wss = new Server({ port: 1234 })
 
-class Sockux {
-  constructor (wss) {
-    this.wss = wss
-    this.middlewares = []
+const msg = type => obj => Object.assign(obj, { type })
+const error = text => msg('error')({ message: text })
+const fuiw = msg('message')
+const rooms = r => msg('rooms')({ rooms: r })
+
+function send (ws, json) {
+  ws.send(JSON.stringify(json))
+}
+
+class User {
+  constructor (ws) {
+    this.isAuth = false
+    this.isSupa = false
+    this.subs = []
   }
 
-  use (middleware) {
-    this.middlewares.push(middleware)
+  add (sub) {
+    this.subs.push(sub)
   }
 
-  route (type, handler) {
-    const routeMiddleware = (req, local, global, next) => {
-      if (req.json.type === type) {
-        handler(req, local, global)
-        return
-      }
+  unsub () {
+    this.subs.forEach(s => s.unsubscribe())
+    this.subs = []
+  }
 
-      next()
+  auth (name, pass) {
+    if (name === 'jeetiss' && pass === '1234') {
+      this.isSupa = true
     }
 
-    this.middlewares.push(routeMiddleware)
+    this.isAuth = true
+    this.name = name
+  }
+}
+
+
+class Dialogs {
+  constructor () {
+    this.dialogs = {}
   }
 
-  start () {
-    const globalScope = { clients: this.wss.clients }
+  add (name) {
+    if (!this.dialogs[name]) {
+      this.dialogs[name] = {
+        subj: new ReplaySubject(),
+        subs: []
+      }
+    }
+  }
 
-    this.wss.on('connection', ws => {
-      const localScope = { ws }
-
-      ws.on('message', data => {
-        const req = { data }
-        this.handle(req, localScope, globalScope)
-      })
+  message (dname, uname, message) {
+    this.dialogs[dname].subj.next({
+      name: uname,
+      message,
+      time: Date.now()
     })
   }
 
-  handle (req, local, global) {
-    let index = 0
+  remove (name) {
+    if (this.dialogs[name]) {
+      this.dialogs.subs.forEach(s => s.unsubscribe())
+      delete this.dialogs[name]
+    }
+  }
 
-    const next = () => {
-      const callback = this.middlewares[index++]
+  all () {
+    return Object.keys(this.dialogs)
+  }
 
-      if (callback) {
-        callback(req, local, global, next)
-      }
+  subscribe (name, cb) {
+    if (this.dialogs[name]) {
+      const subs = this.dialogs[name].subj.subscribe(cb)
+      this.dialogs[name].subs.push(subs)
+
+      return subs
+    } else {
+      throw error('not exist room')
+    }
+  }
+}
+
+const dialogs = new Dialogs()
+
+wss.on('connection', ws => {
+  const user = new User(ws)
+
+  ws.on('close', () => {
+    user.unsub()
+  })
+
+  ws.on('message', data => {
+    let msg
+    try {
+      msg = JSON.parse(data)
+    } catch (err) {
+      return send(ws, error('json need'))
     }
 
-    next()
-  }
-}
+    if (user.isSupa) {
+      // supa user
+      switch (msg.type) {
+        case 'select': {
+          try {
+            user.unsub()
+            user.dname = msg.name
+            user.add(
+              dialogs.subscribe(user.dname, message => send(ws, fuiw(message)))
+            )
+          } catch (err) {
+            send(ws, err)
+          }
 
-const server = new Sockux(wss)
+          break
+        }
+        case 'message': {
+          if (!user.dname) {
+            send(ws, error('select room'))
+          } else {
+            dialogs.message(user.dname, user.name, msg.text)
+          }
+        }
+      }
+    } else if (user.isAuth) {
+      // auth men
+      switch (msg.type) {
+        case 'message': {
+          dialogs.message(user.name, user.name, msg.text)
+        }
+      }
+    } else {
+      // not auth men
+      switch (msg.type) {
+        case 'auth': {
+          user.auth(msg.name, msg.pass)
 
-const logger = function (req, local, global, next) {
-  const start = Date.now()
-  next()
-  console.log(`receive: ${req.data} - ${Date.now() - start} ms`)
-}
+          if (user.isSupa) {
+            send(ws, rooms(dialogs.all()))
+          } else {
+            dialogs.add(user.name)
+            user.subs.push(
+              dialogs.subscribe(user.name, message => send(ws, fuiw(message)))
+            )
+          }
 
-const jsonParse = function (req, local, global, next) {
-  try {
-    req.json = JSON.parse(req.data)
-    next()
-  } catch (err) {
-    local.ws.send('only json allowed')
-  }
-}
+          break
+        }
 
-server.use(logger)
-server.use(jsonParse)
-
-server.route('msg', (req, local, global) => {
-  local.ws.send(JSON.stringify({hello: 'world'}))
+        default: {
+          send(ws, error('auth need'))
+        }
+      }
+    }
+  })
 })
-
-
-server.use(function (req, local) {
-  local.ws.send(req.json['foo'] + 10)
-})
-
-server.start()
