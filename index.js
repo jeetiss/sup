@@ -37,6 +37,11 @@ class User {
   }
 }
 
+const firstMessage = {
+  name: 'jeetiss',
+  message: 'Привет, я могу в вебчик, если тебе есть чего мне сказать то напиши',
+  time: Date.now()
+}
 
 class Dialogs {
   constructor () {
@@ -49,6 +54,8 @@ class Dialogs {
         subj: new ReplaySubject(),
         subs: []
       }
+
+      this.dialogs[name].subj.next(firstMessage)
     }
   }
 
