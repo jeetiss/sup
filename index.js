@@ -1,7 +1,7 @@
 const { Server } = require('ws')
 const { Dialog, Storage } = require('./src/dialogs')
 const { User } = require('./src/user')
-const { send, error, token: tk, rooms } = require('./src/utils')
+const { send, error, user: u, rooms } = require('./src/utils')
 
 const wss = new Server({ port: 1234 })
 const storage = new Storage()
@@ -66,7 +66,7 @@ wss.on('connection', ws => {
             user.subscribeOn(dialog)
           }
 
-          send(ws, tk(token))
+          send(ws, u(user))
           break
         }
 
