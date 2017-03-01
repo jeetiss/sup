@@ -1,16 +1,17 @@
 const { Server } = require('ws')
-const { Dialogs } = require('./src/dialogs')
+const { Dialog, Storage } = require('./src/dialogs')
 const { User } = require('./src/user')
-const { send, error, rooms } = require('./src/utils')
+const { send, error, token: tk, rooms } = require('./src/utils')
 
 const wss = new Server({ port: 1234 })
-const dialogs = new Dialogs()
+const storage = new Storage()
 
 wss.on('connection', ws => {
   const user = new User(ws)
 
   ws.on('close', () => {
-    user.unsub()
+    user.unsubscribe()
+    storage.remove(user.hash)
   })
 
   ws.on('message', data => {
@@ -24,45 +25,48 @@ wss.on('connection', ws => {
     if (user.isSupa) {
       // supa user
       switch (msg.type) {
-        case 'select': {
-          try {
-            user.unsub()
-            user.dname = msg.name
-            user.subscribe(dialogs, user.dname, ws)
-          } catch (err) {
-            send(ws, err)
+        case 'ws/select': {
+          user.dhash = msg.name
+          const dialog = storage.g(user.dhash)
+          if (dialog) {
+            user.unsubscribe()
+            user.subscribeOn(dialog)
+          } else {
+            send(ws, error('room not exist'))
           }
 
           break
         }
-        case 'message': {
-          if (!user.dname) {
+        case 'ws/message': {
+          if (!user.dhash) {
             send(ws, error('select room'))
           } else {
-            dialogs.message(user.dname, user.name, msg.text)
+            storage.g(user.dhash).message(user.name, msg.text)
           }
         }
       }
     } else if (user.isAuth) {
       // auth men
       switch (msg.type) {
-        case 'message': {
-          dialogs.message(user.name, user.name, msg.text)
+        case 'ws/message': {
+          storage.g(user.hash).message(user.name, msg.text)
         }
       }
     } else {
       // not auth men
       switch (msg.type) {
-        case 'auth': {
-          user.auth(msg.name, msg.pass)
+        case 'ws/auth': {
+          const token = user.auth(msg.name, msg.pass, msg.token)
 
           if (user.isSupa) {
-            send(ws, rooms(dialogs.all()))
+            send(ws, rooms(storage.all()))
           } else {
-            dialogs.add(user.name)
-            user.subscribe(dialogs, user.name, ws)
+            const dialog = new Dialog()
+            storage.add(token, dialog)
+            user.subscribeOn(dialog)
           }
 
+          send(ws, tk(token))
           break
         }
 

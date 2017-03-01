@@ -1,5 +1,5 @@
 const { ReplaySubject } = require('rxjs/Rx')
-const { error } = require('./utils')
+// const { error } = require('./utils')
 
 const firstMessage = {
   name: 'jeetiss',
@@ -7,53 +7,48 @@ const firstMessage = {
   time: Date.now()
 }
 
-class Dialogs {
+class Storage {
   constructor () {
-    this.dialogs = {}
+    this.storage = {}
   }
 
-  add (name) {
-    if (!this.dialogs[name]) {
-      this.dialogs[name] = {
-        subj: new ReplaySubject(),
-        subs: []
-      }
-
-      this.dialogs[name].subj.next(firstMessage)
-    }
+  add (hash, obj) {
+    this.storage[hash] = obj
   }
 
-  message (dname, uname, message) {
-    this.dialogs[dname].subj.next({
+  g (hash) {
+    return this.storage[hash]
+  }
+
+  remove (hash) {
+    delete this.storage[hash]
+  }
+
+  all () {
+    return Object.keys(this.storage)
+  }
+}
+
+class Dialog {
+  constructor () {
+    this.messages = new ReplaySubject()
+    this.messages.next(firstMessage)
+  }
+
+  message (uname, message) {
+    this.messages.next({
       name: uname,
       message,
       time: Date.now()
     })
   }
 
-  remove (name) {
-    if (this.dialogs[name]) {
-      this.dialogs.subs.forEach(s => s.unsubscribe())
-      delete this.dialogs[name]
-    }
-  }
-
-  all () {
-    return Object.keys(this.dialogs)
-  }
-
-  subscribe (name, cb) {
-    if (this.dialogs[name]) {
-      const subs = this.dialogs[name].subj.subscribe(cb)
-      this.dialogs[name].subs.push(subs)
-
-      return subs
-    } else {
-      throw error('not exist room')
-    }
+  subscribe (cb) {
+    return this.messages.subscribe(cb)
   }
 }
 
 module.exports = {
-  Dialogs
+  Dialog,
+  Storage
 }

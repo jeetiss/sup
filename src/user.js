@@ -1,7 +1,18 @@
 const { send, message } = require('./utils')
+const crypto = require('crypto')
+
+function getHash (name) {
+  const hmac = crypto.createHmac('sha256', 'secret word')
+
+  hmac.update(`#${name}#${Date.now()}#`)
+  return hmac.digest('hex')
+}
+
+const users = {}
 
 class User {
   constructor (ws) {
+    this.ws = ws
     this.isAuth = false
     this.isSupa = false
     this.subs = []
@@ -11,23 +22,35 @@ class User {
     this.subs.push(sub)
   }
 
-  unsub () {
+  unsubscribe () {
     this.subs.forEach(s => s.unsubscribe())
     this.subs = []
   }
 
-  auth (name, pass) {
-    if (name === 'jeetiss' && pass === '1234') {
-      this.isSupa = true
+  auth (name, pass, token) {
+    if (!token || !users[token]) {
+      token = getHash(name)
+      const userProps = {
+        token,
+        name,
+        isAuth: true
+      }
+
+      if (name === 'jeetiss' && pass === '1234') {
+        userProps.isSupa = true
+      }
+
+      users[token] = userProps
     }
 
-    this.isAuth = true
-    this.name = name
+    Object.assign(this, users[token])
+
+    return token
   }
 
-  subscribe (dialogs, name, ws) {
+  subscribeOn (dialog) {
     this.add(
-      dialogs.subscribe(name, msg => send(ws, message(msg)))
+      dialog.subscribe(msg => send(this.ws, message(msg)))
     )
   }
 }
