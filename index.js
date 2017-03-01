@@ -3,8 +3,9 @@ const { Dialog, Storage } = require('./src/dialogs')
 const { User } = require('./src/user')
 const { send, error, user: u, rooms } = require('./src/utils')
 
-const wss = new Server({ port: 1234 })
+const wss = new Server({ port: 1234 }, () => console.log('server working'))
 const storage = new Storage()
+
 
 wss.on('connection', ws => {
   const user = new User(ws)
@@ -15,6 +16,7 @@ wss.on('connection', ws => {
   })
 
   ws.on('message', data => {
+    console.log(`receive ${data.length} symbols`)
     let msg
     try {
       msg = JSON.parse(data)
