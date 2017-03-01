@@ -1,7 +1,7 @@
 const { Server } = require('ws')
 const { Dialogs } = require('./src/dialogs')
 const { User } = require('./src/user')
-const { send, error, message, rooms } = require('./src/utils')
+const { send, error, rooms } = require('./src/utils')
 
 const wss = new Server({ port: 1234 })
 const dialogs = new Dialogs()
@@ -28,9 +28,7 @@ wss.on('connection', ws => {
           try {
             user.unsub()
             user.dname = msg.name
-            user.add(
-              dialogs.subscribe(user.dname, message => send(ws, fuiw(message)))
-            )
+            user.subscribe(dialogs, user.dname, ws)
           } catch (err) {
             send(ws, err)
           }
@@ -62,9 +60,7 @@ wss.on('connection', ws => {
             send(ws, rooms(dialogs.all()))
           } else {
             dialogs.add(user.name)
-            user.subs.push(
-              dialogs.subscribe(user.name, message => send(ws, fuiw(message)))
-            )
+            user.subscribe(dialogs, user.name, ws)
           }
 
           break
