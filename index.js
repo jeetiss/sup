@@ -49,7 +49,7 @@ wss.on('connection', ws => {
       // auth men
       switch (msg.type) {
         case 'ws/message': {
-          storage.g(user.hash).message(user.name, msg.text)
+          storage.g(user.token).message(user.name, msg.text)
         }
       }
     } else {
