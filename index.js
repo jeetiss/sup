@@ -16,13 +16,14 @@ wss.on('connection', ws => {
   })
 
   ws.on('message', data => {
-    console.log(`receive ${data.length} symbols`)
     let msg
     try {
       msg = JSON.parse(data)
     } catch (err) {
       return send(ws, error('json need'))
     }
+
+    console.log(`receive ${data.length} symbols:\n ${JSON.stringify(msg)}`)
 
     if (user.isSupa) {
       // supa user
@@ -58,7 +59,14 @@ wss.on('connection', ws => {
       // not auth men
       switch (msg.type) {
         case 'ws/auth': {
-          const token = user.auth(msg.name, msg.pass, msg.token)
+          const token = msg.token
+            ? user.authWithToken(msg.token)
+            : user.auth(msg.name, msg.pass)
+
+          if (!token) {
+            send(ws, u(user))
+            return
+          }
 
           if (user.isSupa) {
             send(ws, rooms(storage.all()))

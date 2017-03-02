@@ -27,20 +27,24 @@ class User {
     this.subs = []
   }
 
-  auth (name, pass, token) {
-    if (!token || !users[token]) {
-      token = getHash(name)
-      const userProps = {
-        token,
-        name,
-        isAuth: true
-      }
+  authWithToken (token) {
+    if (token && users[token]) {
+      Object.assign(this, users[token])
 
-      if (name === 'jeetiss' && pass === '1234') {
-        userProps.isSupa = true
-      }
+      return token
+    }
 
-      users[token] = userProps
+    return
+  }
+
+  auth (name, pass) {
+    const token = getHash(name)
+
+    users[token] = {
+      token,
+      name,
+      isAuth: true,
+      isSupa: name === 'jeetiss' && pass === '1234'
     }
 
     Object.assign(this, users[token])
