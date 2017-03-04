@@ -6,13 +6,16 @@ const { send, error, user: u, rooms } = require('./src/utils')
 const wss = new Server({ port: 1234 }, () => console.log('server working'))
 const storage = new Storage()
 
+storage.subscribe(val => console.log(`\n\n\n${JSON.stringify(val)}\n\n\n`))
 
 wss.on('connection', ws => {
   const user = new User(ws)
 
   ws.on('close', () => {
     user.unsubscribe()
-    storage.remove(user.hash)
+    storage.remove(
+      storage.g(user.token)
+    )
   })
 
   ws.on('message', data => {
@@ -71,8 +74,8 @@ wss.on('connection', ws => {
           if (user.isSupa) {
             send(ws, rooms(storage.all()))
           } else {
-            const dialog = new Dialog()
-            storage.add(token, dialog)
+            const dialog = new Dialog(user.token)
+            storage.add(dialog)
             user.subscribeOn(dialog)
           }
 

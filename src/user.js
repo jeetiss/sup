@@ -15,16 +15,7 @@ class User {
     this.ws = ws
     this.isAuth = false
     this.isSupa = false
-    this.subs = []
-  }
-
-  add (sub) {
-    this.subs.push(sub)
-  }
-
-  unsubscribe () {
-    this.subs.forEach(s => s.unsubscribe())
-    this.subs = []
+    this.subs = {}
   }
 
   authWithToken (token) {
@@ -52,10 +43,20 @@ class User {
     return token
   }
 
-  subscribeOn (dialog) {
-    this.add(
-      dialog.subscribe(msg => send(this.ws, message(msg)))
-    )
+  subscribeOn (pub) {
+    this.subs[pub.id()] = pub
+      .subscribe(msg => send(this.ws, message(msg)))
+  }
+
+  unsubscribeOn (pub) {
+    const idx = pub.id()
+    this.subs[idx].unsubscribe()
+    delete this.subs[idx]
+  }
+
+  unsubscribe () {
+    Object.values(this.subs).forEach(value => value.unsubscribe())
+    this.subs = {}
   }
 }
 
