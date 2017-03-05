@@ -1,4 +1,4 @@
-const { send, message } = require('./utils')
+const { send } = require('./utils')
 const crypto = require('crypto')
 
 function getHash (name) {
@@ -45,7 +45,7 @@ class User {
 
   subscribeOn (pub) {
     this.subs[pub.id()] = pub
-      .subscribe(msg => send(this.ws, message(msg)))
+      .subscribe(msg => send(this.ws, pub.convertToUser(msg)))
   }
 
   unsubscribeOn (pub) {

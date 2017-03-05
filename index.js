@@ -1,7 +1,7 @@
 const { Server } = require('ws')
 const { Dialog, Storage } = require('./src/dialogs')
 const { User } = require('./src/user')
-const { send, error, user: u, rooms } = require('./src/utils')
+const { send, error, user: u } = require('./src/utils')
 
 const wss = new Server({ port: 1234 }, () => console.log('server working'))
 const storage = new Storage()
@@ -13,9 +13,11 @@ wss.on('connection', ws => {
 
   ws.on('close', () => {
     user.unsubscribe()
-    storage.remove(
-      storage.g(user.token)
-    )
+    const dialog = storage.g(user.token) || storage.g(user.dhash)
+
+    if (dialog.count() === 0) {
+      storage.remove(dialog)
+    }
   })
 
   ws.on('message', data => {
@@ -32,10 +34,15 @@ wss.on('connection', ws => {
       // supa user
       switch (msg.type) {
         case 'ws/select': {
-          user.dhash = msg.name
-          const dialog = storage.g(user.dhash)
+          let dialog = storage.g(user.dhash)
           if (dialog) {
-            user.unsubscribe()
+            user.unsubscribeOn(dialog)
+          }
+
+          user.dhash = msg.name
+          dialog = storage.g(user.dhash)
+
+          if (dialog) {
             user.subscribeOn(dialog)
           } else {
             send(ws, error('room not exist'))
@@ -72,7 +79,7 @@ wss.on('connection', ws => {
           }
 
           if (user.isSupa) {
-            send(ws, rooms(storage.all()))
+            user.subscribeOn(storage)
           } else {
             const dialog = new Dialog(user.token)
             storage.add(dialog)

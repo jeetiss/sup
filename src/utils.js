@@ -5,7 +5,7 @@ const msg = type => obj => {
 }
 const error = text => msg('error')({ message: text })
 const message = msg('message')
-const rooms = r => msg('rooms')({ rooms: r })
+const rooms = r => msg(`room_${r.type}`)({ room: r.obj })
 const user = user => msg('user')({ name: user.name, isAuth: user.isAuth, isSupa: user.isSupa, token: user.token })
 
 function send (ws, json) {

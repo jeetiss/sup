@@ -1,5 +1,5 @@
 const { Subject, ReplaySubject } = require('rxjs/Rx')
-// const { error } = require('./utils')
+const { message, rooms } = require('./utils')
 
 const firstMessage = {
   name: 'jeetiss',
@@ -12,7 +12,7 @@ const firstMessage = {
 
 class Storage {
   constructor () {
-    this.id = `###${Math.random() * 1000}`
+    this.idx = `###${Math.random() * 1000}`
     this.emiter = new Subject()
     this.allObj = new ReplaySubject(1)
 
@@ -33,10 +33,12 @@ class Storage {
   }
 
   remove (obj) {
-    const idx = obj.id()
-    delete this.storage[idx]
-    this.allObj.next({ type: 'all', obj: this.all() })
-    this.emiter.next({ type: 'remove', obj: idx })
+    if (obj) {
+      const idx = obj.id()
+      delete this.storage[idx]
+      this.allObj.next({ type: 'all', obj: this.all() })
+      this.emiter.next({ type: 'remove', obj: idx })
+    }
   }
 
   all () {
@@ -46,6 +48,14 @@ class Storage {
   subscribe (cb) {
     return this.emiter.merge(this.allObj.first()).subscribe(cb)
   }
+
+  id () {
+    return this.idx
+  }
+
+  convertToUser (value) {
+    return rooms(value)
+  }
 }
 
 class Dialog {
@@ -53,10 +63,15 @@ class Dialog {
     this.idx = idx
     this.messages = new ReplaySubject()
     this.messages.next(firstMessage)
+    this.countSubs = 0
   }
 
   id () {
     return this.idx
+  }
+
+  count () {
+    return this.countSubs
   }
 
   message (uname, message) {
@@ -67,8 +82,19 @@ class Dialog {
     })
   }
 
+  convertToUser (value) {
+    return message(value)
+  }
+
   subscribe (cb) {
-    return this.messages.subscribe(cb)
+    this.countSubs += 1
+    const subscription = this.messages.subscribe(cb)
+    return {
+      unsubscribe: () => {
+        this.countSubs -= 1
+        subscription.unsubscribe()
+      }
+    }
   }
 }
 
