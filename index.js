@@ -15,7 +15,7 @@ wss.on('connection', ws => {
     user.unsubscribe()
     const dialog = storage.g(user.token) || storage.g(user.dhash)
 
-    if (dialog.count() === 0) {
+    if (dialog && dialog.count() === 0) {
       storage.remove(dialog)
     }
   })
