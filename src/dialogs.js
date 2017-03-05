@@ -8,7 +8,7 @@ const firstMessage = {
 }
 
 // add { type: 'add', obj }
-// remove { type: 'remove', obj }
+// remove { type: 'rem', obj }
 
 class Storage {
   constructor () {
@@ -26,6 +26,8 @@ class Storage {
     this.storage[idx] = obj
     this.allObj.next({ type: 'all', obj: this.all() })
     this.emiter.next({ type: 'add', obj: idx })
+
+    return obj
   }
 
   g (hash) {
@@ -37,7 +39,7 @@ class Storage {
       const idx = obj.id()
       delete this.storage[idx]
       this.allObj.next({ type: 'all', obj: this.all() })
-      this.emiter.next({ type: 'remove', obj: idx })
+      this.emiter.next({ type: 'rem', obj: idx })
     }
   }
 

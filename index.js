@@ -6,7 +6,7 @@ const { send, error, user: u } = require('./src/utils')
 const wss = new Server({ port: 1234 }, () => console.log('server working'))
 const storage = new Storage()
 
-storage.subscribe(val => console.log(`\n\n\n${JSON.stringify(val)}\n\n\n`))
+// storage.subscribe(val => console.log(`\n\n\n${JSON.stringify(val)}\n\n\n`))
 
 wss.on('connection', ws => {
   const user = new User(ws)
@@ -81,8 +81,9 @@ wss.on('connection', ws => {
           if (user.isSupa) {
             user.subscribeOn(storage)
           } else {
-            const dialog = new Dialog(user.token)
-            storage.add(dialog)
+            const dialog = storage.g(user.token) ||
+              storage.add(new Dialog(user.token))
+
             user.subscribeOn(dialog)
           }
 
