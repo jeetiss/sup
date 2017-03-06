@@ -5,12 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
+    "start": "SUPA_SECRET=lol SUPA_NAME=jeetiss SUPA_PASS=1234 node index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "rxjs": "^5.2.0",
     "ws": "^2.1.0"
   }
 }

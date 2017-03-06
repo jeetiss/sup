@@ -6,8 +6,6 @@ const { send, error, user: u } = require('./src/utils')
 const wss = new Server({ port: 1234 }, () => console.log('server working'))
 const storage = new Storage()
 
-// storage.subscribe(val => console.log(`\n\n\n${JSON.stringify(val)}\n\n\n`))
-
 wss.on('connection', ws => {
   const user = new User(ws)
 
