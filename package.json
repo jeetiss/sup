@@ -8,7 +8,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "SUPA_SECRET=lol SUPA_NAME=jeetiss SUPA_PASS=1234 node index.js"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
