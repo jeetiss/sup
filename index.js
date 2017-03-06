@@ -2,8 +2,9 @@ const { Server } = require('ws')
 const { Dialog, Storage } = require('./src/dialogs')
 const { User } = require('./src/user')
 const { send, error, user: u } = require('./src/utils')
+const port = process.env.PORT || 5000
 
-const wss = new Server({ port: 1234 }, () => console.log('server working'))
+const wss = new Server({ port }, () => console.log('server working'))
 const storage = new Storage()
 
 wss.on('connection', ws => {
