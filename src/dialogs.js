@@ -21,13 +21,27 @@ class Storage {
     this.storage = {}
   }
 
-  add (obj) {
+  addRemHelper (ar, obj) {
     const idx = obj.id()
-    this.storage[idx] = obj
+    const sendObj = {
+      key: idx,
+      name: this.storage[idx].dialogName
+    }
+
+    if (ar === 'add') {
+      this.storage[idx] = obj
+    } else {
+      delete this.storage[idx]
+    }
+
     this.allObj.next({ type: 'all', obj: this.all() })
-    this.emiter.next({ type: 'add', obj: idx })
+    this.emiter.next({ type: ar, obj: sendObj })
 
     return obj
+  }
+
+  add (obj) {
+    return this.addRemHelper('add', obj)
   }
 
   g (hash) {
@@ -35,16 +49,13 @@ class Storage {
   }
 
   remove (obj) {
-    if (obj) {
-      const idx = obj.id()
-      delete this.storage[idx]
-      this.allObj.next({ type: 'all', obj: this.all() })
-      this.emiter.next({ type: 'rem', obj: idx })
-    }
+    return this.addRemHelper('rem', obj)
   }
 
   all () {
-    return Object.keys(this.storage)
+    return Object
+      .keys(this.storage)
+      .map(key => ({key, name: this.storage[key].dialogName}))
   }
 
   subscribe (cb) {
@@ -61,8 +72,9 @@ class Storage {
 }
 
 class Dialog {
-  constructor (idx) {
+  constructor (idx, username) {
     this.idx = idx
+    this.dialogName = username
     this.messages = new ReplaySubject()
     this.messages.next(firstMessage)
     this.countSubs = 0
