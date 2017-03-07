@@ -25,7 +25,7 @@ class Storage {
     const idx = obj.id()
     const sendObj = {
       key: idx,
-      name: this.storage[idx].dialogName
+      name: obj.dialogName
     }
 
     if (ar === 'add') {

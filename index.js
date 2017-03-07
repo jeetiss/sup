@@ -36,6 +36,9 @@ wss.on('connection', ws => {
           let dialog = storage.g(user.dhash)
           if (dialog) {
             user.unsubscribeOn(dialog)
+            if (dialog.count() === 0) {
+              storage.remove(dialog)
+            }
           }
 
           user.dhash = msg.name
@@ -81,7 +84,7 @@ wss.on('connection', ws => {
             user.subscribeOn(storage)
           } else {
             const dialog = storage.g(user.token) ||
-              storage.add(new Dialog(user.token))
+              storage.add(new Dialog(user.token, user.name))
 
             user.subscribeOn(dialog)
           }
