@@ -1,8 +1,11 @@
 const { send } = require('./utils')
 const crypto = require('crypto')
+const supaName = process.env.SUPA_NAME || 'jeetiss'
+const supaPass = process.env.SUPA_PASS || '1234'
+const supaSercet = process.env.SUPA_SECRET || 'secret'
 
 function getHash (name) {
-  const hmac = crypto.createHmac('sha256', process.env.SUPA_SECRET)
+  const hmac = crypto.createHmac('sha256', supaSercet)
 
   hmac.update(`#${name}#${Date.now()}#`)
   return hmac.digest('hex')
@@ -35,7 +38,7 @@ class User {
       token,
       name,
       isAuth: true,
-      isSupa: name === process.env.SUPA_NAME && pass === process.env.SUPA_PASS
+      isSupa: name === supaName && pass === supaPass
     }
 
     Object.assign(this, users[token])
