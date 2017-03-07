@@ -94,7 +94,7 @@ wss.on('connection', ws => {
               fetch(`https://hooks.slack.com/services/${slackToken}`, {
                 method: 'POST',
                 headers: 'Content-type: applicatiojson',
-                body: JSON.stringify({text: `user ${user.name} login in supa app`})
+                body: JSON.stringify({text: `user ${user.name} login in supa app\n https://jeetiss.github.io/client/`})
               })
             }
           }
