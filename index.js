@@ -2,7 +2,9 @@ const { Server } = require('ws')
 const { Dialog, Storage } = require('./src/dialogs')
 const { User } = require('./src/user')
 const { send, error, user: u } = require('./src/utils')
+const fetch = require('node-fetch')
 const port = process.env.PORT || 5000
+const slackToken = process.env.SLACK_TOKEN || false
 
 const wss = new Server({ port }, () => console.log('server working'))
 const storage = new Storage()
@@ -87,6 +89,14 @@ wss.on('connection', ws => {
               storage.add(new Dialog(user.token, user.name))
 
             user.subscribeOn(dialog)
+
+            if (slackToken) {
+              fetch(`https://hooks.slack.com/services/${slackToken}`, {
+                method: 'POST',
+                headers: 'Content-type: applicatiojson',
+                body: JSON.stringify({text: `user ${user.name} login in supa app`})
+              })
+            }
           }
 
           send(ws, u(user))
