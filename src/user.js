@@ -1,4 +1,5 @@
 const { send } = require('./utils')
+const { createSL } = require('./db')
 const crypto = require('crypto')
 const supaName = process.env.SUPA_NAME || 'jeetiss'
 const supaPass = process.env.SUPA_PASS || '1234'
@@ -11,7 +12,7 @@ function getHash (name) {
   return hmac.digest('hex')
 }
 
-const users = {}
+const { store, load } = createSL('user')
 
 class User {
   constructor (ws) {
@@ -21,27 +22,27 @@ class User {
     this.subs = {}
   }
 
-  authWithToken (token) {
-    if (token && users[token]) {
-      Object.assign(this, users[token])
-
-      return token
-    }
-
-    return
+  async authWithToken (token) {
+    if (!token) return
+    const user = await load(token)
+    if (!user) return
+    Object.assign(this, user)
+    return token
   }
 
   auth (name, pass) {
     const token = getHash(name)
 
-    users[token] = {
+    const user = {
       token,
       name,
       isAuth: true,
       isSupa: name === supaName && pass === supaPass
     }
 
-    Object.assign(this, users[token])
+    store(token, user)
+
+    Object.assign(this, user)
 
     return token
   }

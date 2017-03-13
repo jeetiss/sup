@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "node-fetch": "^1.6.3",
+    "redis": "^2.7.0",
     "rxjs": "^5.2.0",
     "ws": "^2.1.0"
   }

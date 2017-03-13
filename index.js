@@ -12,16 +12,16 @@ const storage = new Storage()
 wss.on('connection', ws => {
   const user = new User(ws)
 
-  ws.on('close', () => {
+  ws.on('close', async () => {
     user.unsubscribe()
-    const dialog = storage.g(user.token) || storage.g(user.dhash)
+    const dialog = await storage.g(user.token) || await storage.g(user.dhash)
 
     if (dialog && dialog.count() === 0) {
       storage.remove(dialog)
     }
   })
 
-  ws.on('message', data => {
+  ws.on('message', async data => {
     let msg
     try {
       msg = JSON.parse(data)
@@ -29,13 +29,13 @@ wss.on('connection', ws => {
       return send(ws, error('json need'))
     }
 
-    console.log(`receive ${data.length} symbols:\n ${JSON.stringify(msg)}`)
+    // console.log(`receive ${data.length} symbols:\n ${JSON.stringify(msg)}`)
 
     if (user.isSupa) {
       // supa user
       switch (msg.type) {
         case 'ws/select': {
-          let dialog = storage.g(user.dhash)
+          let dialog = user.dhash && await storage.g(user.dhash)
           if (dialog) {
             user.unsubscribeOn(dialog)
             if (dialog.count() === 0) {
@@ -44,7 +44,7 @@ wss.on('connection', ws => {
           }
 
           user.dhash = msg.name
-          dialog = storage.g(user.dhash)
+          dialog = await storage.g(user.dhash)
 
           if (dialog) {
             user.subscribeOn(dialog)
@@ -58,7 +58,7 @@ wss.on('connection', ws => {
           if (!user.dhash) {
             send(ws, error('select room'))
           } else {
-            storage.g(user.dhash).message(user.name, msg.text)
+            (await storage.g(user.dhash)).message(user.name, msg.text)
           }
         }
       }
@@ -66,7 +66,7 @@ wss.on('connection', ws => {
       // auth men
       switch (msg.type) {
         case 'ws/message': {
-          storage.g(user.token).message(user.name, msg.text)
+          (await storage.g(user.token)).message(user.name, msg.text)
         }
       }
     } else {
@@ -74,7 +74,7 @@ wss.on('connection', ws => {
       switch (msg.type) {
         case 'ws/auth': {
           const token = msg.token
-            ? user.authWithToken(msg.token)
+            ? await user.authWithToken(msg.token)
             : user.auth(msg.name, msg.pass)
 
           if (!token) {
@@ -85,8 +85,10 @@ wss.on('connection', ws => {
           if (user.isSupa) {
             user.subscribeOn(storage)
           } else {
-            const dialog = storage.g(user.token) ||
-              storage.add(new Dialog(user.token, user.name))
+            const dialog = (await storage.g(
+                user.token,
+                Dialog.bind(null, user.token, user.name)
+              )) || storage.add(new Dialog(user.token, user.name))
 
             user.subscribeOn(dialog)
 

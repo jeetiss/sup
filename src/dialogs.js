@@ -1,9 +1,11 @@
 const { Subject, ReplaySubject } = require('rxjs/Rx')
 const { message, rooms } = require('./utils')
+const { createSL } = require('./db')
+const { store, load } = createSL('dialog')
 
 const firstMessage = {
   name: 'jeetiss',
-  message: 'Привет, если тебе есть чего мне сказать то напиши',
+  text: 'Привет, я jeetiss в интернете и Ивахненко Дмитрий в реальном мире, я веб разработчик. Я пока не придумал как поделиться ссылками на сети тут, поэтому можете спросить их и я может быть отвечу)',
   time: Date.now()
 }
 
@@ -31,6 +33,7 @@ class Storage {
     if (ar === 'add') {
       this.storage[idx] = obj
     } else {
+      store(idx, obj.getValues())
       delete this.storage[idx]
     }
 
@@ -44,8 +47,16 @@ class Storage {
     return this.addRemHelper('add', obj)
   }
 
-  g (hash) {
-    return this.storage[hash]
+  async g (hash, Ctor) {
+    let obj = this.storage[hash]
+    if (obj) return obj
+
+    obj = await load(hash)
+    if (obj && Ctor) {
+      this.add(new Ctor(obj))
+      return this.storage[hash]
+    }
+    return
   }
 
   remove (obj) {
@@ -72,11 +83,11 @@ class Storage {
 }
 
 class Dialog {
-  constructor (idx, username) {
+  constructor (idx, username, messages = firstMessage) {
     this.idx = idx
     this.dialogName = username
     this.messages = new ReplaySubject()
-    this.messages.next(firstMessage)
+    this.messages.next(messages)
     this.countSubs = 0
   }
 
@@ -91,13 +102,22 @@ class Dialog {
   message (uname, message) {
     this.messages.next({
       name: uname,
-      message,
+      text: message,
       time: Date.now()
     })
   }
 
   convertToUser (value) {
     return message(value)
+  }
+
+  getValues () {
+    let val = []
+
+    const sub = this.subscribe(value => { val = val.concat(value) })
+    sub.unsubscribe()
+
+    return val
   }
 
   subscribe (cb) {
