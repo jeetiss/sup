@@ -44,7 +44,7 @@ wss.on('connection', ws => {
           }
 
           user.dhash = msg.name
-          dialog = await storage.g(user.dhash)
+          dialog = user.dhash && await storage.g(user.dhash)
 
           if (dialog) {
             user.subscribeOn(dialog)
