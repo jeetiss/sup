@@ -3,11 +3,11 @@ const { message, rooms } = require('./utils')
 const { createSL } = require('./db')
 const { store, load } = createSL('dialog')
 
-const firstMessage = {
+const firstMessage = name => ({
   name: 'jeetiss',
-  text: 'Привет, я jeetiss в интернете и Ивахненко Дмитрий в реальном мире, я веб разработчик. Я пока не придумал как поделиться ссылками на сети тут, поэтому можете спросить их и я может быть отвечу)',
+  text: `Привет, ${name}. Я Ивахненко Дмитрий веб разработчик. Напиши мне`,
   time: Date.now()
-}
+})
 
 // add { type: 'add', obj }
 // remove { type: 'rem', obj }
@@ -83,7 +83,7 @@ class Storage {
 }
 
 class Dialog {
-  constructor (idx, username, messages = firstMessage) {
+  constructor (idx, username, messages = firstMessage(username)) {
     this.idx = idx
     this.dialogName = username
     this.messages = new ReplaySubject()
