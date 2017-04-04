@@ -12,7 +12,7 @@ function getHash (name) {
   return hmac.digest('hex')
 }
 
-const { store, load } = createSL('user')
+const { store, load, loadAll } = createSL('user')
 
 class User {
   constructor (ws) {
@@ -61,6 +61,14 @@ class User {
   unsubscribe () {
     Object.values(this.subs).forEach(value => value.unsubscribe())
     this.subs = {}
+  }
+
+  static async getAll () {
+    const users = await loadAll()
+
+    console.log(users)
+
+    return users
   }
 }
 

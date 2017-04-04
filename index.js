@@ -84,6 +84,7 @@ wss.on('connection', ws => {
 
           if (user.isSupa) {
             user.subscribeOn(storage)
+            Storage.getAll()
           } else {
             const dialog = (await storage.g(
                 user.token,

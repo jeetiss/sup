@@ -1,7 +1,7 @@
 const { Subject, ReplaySubject } = require('rxjs/Rx')
 const { message, rooms } = require('./utils')
 const { createSL } = require('./db')
-const { store, load } = createSL('dialog')
+const { store, load, loadAll } = createSL('dialog')
 
 const firstMessage = name => ({
   name: 'jeetiss',
@@ -79,6 +79,14 @@ class Storage {
 
   convertToUser (value) {
     return rooms(value)
+  }
+
+  static async getAll () {
+    const d = await loadAll()
+
+    console.log(d)
+
+    return d
   }
 }
 
